@@ -1,0 +1,46 @@
+{
+  "data": [
+    {
+      "monitor_tag": "api-slow",
+      "timestamp": 1793381460,
+      "status": "DEGRADED",
+      "latency": 16,
+      "type": "REALTIME"
+    },
+    {
+      "monitor_tag": "api-slow",
+      "timestamp": 1793381520,
+      "status": "DEGRADED",
+      "latency": 53,
+      "type": "REALTIME"
+    },
+    {
+      "monitor_tag": "api-slow",
+      "timestamp": 1793381580,
+      "status": "DEGRADED",
+      "latency": 116,
+      "type": "REALTIME"
+    },
+    {
+      "monitor_tag": "api-slow",
+      "timestamp": 1793381640,
+      "status": "DEGRADED",
+      "latency": 156,
+      "type": "REALTIME"
+    },
+    {
+      "monitor_tag": "api-slow",
+      "timestamp": 1793381700,
+      "status": "DEGRADED",
+      "latency": 79,
+      "type": "REALTIME"
+    },
+    {
+      "monitor_tag": "api-slow",
+      "timestamp": 1793381760,
+      "status": "DEGRADED",
+      "latency": 766,
+      "type": "REALTIME"
+    }
+  ]
+}

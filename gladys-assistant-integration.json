@@ -1,177 +1,592 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Kener",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Your Kener status page in Gladys: monitors up or down, uptime, incidents, and scenes on an outage.",
+    "fr": "Votre page de statut Kener dans Gladys : moniteurs, disponibilité, incidents, scènes si panne.",
+    "de": "Deine Kener-Statusseite in Gladys: Monitore, Verfügbarkeit, Vorfälle und Szenen bei Ausfall.",
+    "es": "Su página de estado Kener en Gladys: monitores, disponibilidad, incidentes y escenas si hay caída."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-kener:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-kener/main/cover.png",
+  "categories": ["network"],
   "transports": ["local", "cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": { "en": "Your Kener", "fr": "Votre Kener", "de": "Dein Kener", "es": "Su Kener" },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Enter the address of your Kener (version 4) and an API key. Then add the monitors to follow from the Discover tab: Gladys reads Kener, it does not check your services itself.",
+        "fr": "Saisissez l'adresse de votre Kener (version 4) et une clé d'API. Ajoutez ensuite les moniteurs à suivre depuis l'onglet Découverte : Gladys lit Kener, elle ne teste pas vos services elle-même.",
+        "de": "Gib die Adresse deines Kener (Version 4) und einen API-Schlüssel ein. Lege dann die zu verfolgenden Monitore im Tab „Entdecken“ an: Gladys liest Kener, sie prüft deine Dienste nicht selbst.",
+        "es": "Introduzca la dirección de su Kener (versión 4) y una clave de API. Después añada los monitores que desea seguir desde la pestaña Descubrir: Gladys lee Kener, no comprueba sus servicios por sí misma."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/guim31/gladys-kener/blob/main/docs/en.md",
+          "label": {
+            "en": "Setup guide",
+            "fr": "Guide d'installation",
+            "de": "Einrichtungsanleitung",
+            "es": "Guía de instalación"
+          }
+        },
+        {
+          "url": "https://kener.ing/docs/v4/api-reference",
+          "label": {
+            "en": "Kener API",
+            "fr": "API de Kener",
+            "de": "Kener-API",
+            "es": "API de Kener"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "url",
+      "type": "string",
+      "label": {
+        "en": "Kener address",
+        "fr": "Adresse de Kener",
+        "de": "Kener-Adresse",
+        "es": "Dirección de Kener"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "Address of your status page (port 3000 by default), with its sub-path if Kener has one.",
+        "fr": "Adresse de votre page de statut (port 3000 par défaut), avec son sous-chemin si Kener en a un.",
+        "de": "Adresse deiner Statusseite (standardmäßig Port 3000), mit ihrem Unterpfad, falls Kener einen hat.",
+        "es": "Dirección de su página de estado (puerto 3000 por defecto), con su subruta si Kener tiene una."
+      },
+      "placeholder": {
+        "en": "e.g. http://192.168.1.2:3000",
+        "fr": "ex. http://192.168.1.2:3000",
+        "de": "z. B. http://192.168.1.2:3000",
+        "es": "p. ej. http://192.168.1.2:3000"
+      },
+      "required": true
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "api_key",
+      "type": "secret",
+      "label": {
+        "en": "API key",
+        "fr": "Clé d'API",
+        "de": "API-Schlüssel",
+        "es": "Clave de API"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "Created in Kener: Manage → API Keys. Shown once by Kener: copy it right away.",
+        "fr": "Créée dans Kener : Manage → API Keys. Kener ne l'affiche qu'une fois : copiez-la tout de suite.",
+        "de": "In Kener erstellt: Manage → API Keys. Kener zeigt ihn nur einmal an: Kopiere ihn sofort.",
+        "es": "Se crea en Kener: Manage → API Keys. Kener solo la muestra una vez: cópiela enseguida."
+      },
+      "required": true
     },
     {
-      "key": "unit",
+      "key": "options",
+      "type": "section",
+      "label": { "en": "Options", "fr": "Options", "de": "Optionen", "es": "Opciones" }
+    },
+    {
+      "key": "poll_interval",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often Kener is read: one request for the list, one per monitor, one for the incidents.",
+        "fr": "À quelle fréquence Kener est lu : une requête pour la liste, une par moniteur, une pour les incidents.",
+        "de": "Wie oft Kener gelesen wird: eine Anfrage für die Liste, eine pro Monitor, eine für die Vorfälle.",
+        "es": "Con qué frecuencia se lee Kener: una petición para la lista, una por monitor y una para los incidentes."
+      },
       "required": false,
-      "default": "celsius",
+      "default": "60",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "60",
+          "label": { "en": "1 minute", "fr": "1 minute", "de": "1 Minute", "es": "1 minuto" }
+        },
+        {
+          "value": "120",
+          "label": { "en": "2 minutes", "fr": "2 minutes", "de": "2 Minuten", "es": "2 minutos" }
+        },
+        {
+          "value": "300",
+          "label": { "en": "5 minutes", "fr": "5 minutes", "de": "5 Minuten", "es": "5 minutos" }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "include_hidden",
+      "type": "boolean",
+      "label": {
+        "en": "Include hidden monitors",
+        "fr": "Inclure les moniteurs masqués",
+        "de": "Ausgeblendete Monitore einbeziehen",
+        "es": "Incluir los monitores ocultos"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "The monitors hidden from the status page are left out by default.",
+        "fr": "Les moniteurs masqués sur la page de statut sont écartés par défaut.",
+        "de": "Die auf der Statusseite ausgeblendeten Monitore werden standardmäßig weggelassen.",
+        "es": "Los monitores ocultos en la página de estado se omiten por defecto."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": false
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the names",
+        "fr": "Langue des noms",
+        "de": "Sprache der Namen",
+        "es": "Idioma de los nombres"
+      },
+      "description": {
+        "en": "Language of the feature names (set when a device is added) and of the scene results.",
+        "fr": "Langue des noms des fonctionnalités (fixés à l'ajout d'un appareil) et des résultats de scène.",
+        "de": "Sprache der Funktionsnamen (beim Anlegen eines Geräts festgelegt) und der Szenen-Ergebnisse.",
+        "es": "Idioma de los nombres de las funciones (fijados al añadir un dispositivo) y de los resultados de escena."
+      },
+      "required": false,
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": { "en": "English", "fr": "Anglais", "de": "Englisch", "es": "Inglés" }
+        },
+        {
+          "value": "fr",
+          "label": { "en": "French", "fr": "Français", "de": "Französisch", "es": "Francés" }
+        },
+        {
+          "value": "de",
+          "label": { "en": "German", "fr": "Allemand", "de": "Deutsch", "es": "Alemán" }
+        },
+        {
+          "value": "es",
+          "label": { "en": "Spanish", "fr": "Espagnol", "de": "Spanisch", "es": "Español" }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "timeout_seconds": 60
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "monitor_down",
+      "label": {
+        "en": "A monitor goes down",
+        "fr": "Un moniteur tombe en panne",
+        "de": "Ein Monitor fällt aus",
+        "es": "Un monitor cae"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "Kener records a Kener monitor as down (after its own confirmation).",
+        "fr": "Kener enregistre un moniteur en panne (après sa propre confirmation).",
+        "de": "Kener erfasst einen Monitor als ausgefallen (nach seiner eigenen Bestätigung).",
+        "es": "Kener registra un monitor como caído (tras su propia confirmación)."
       },
       "fields": [
         {
           "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
           "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
+          "source": "devices",
+          "label": {
+            "en": "Monitors (empty: any)",
+            "fr": "Moniteurs (vide : tous)",
+            "de": "Monitore (leer: alle)",
+            "es": "Monitores (vacío: todos)"
+          }
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "monitor",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Monitor name",
+            "fr": "Nom du moniteur",
+            "de": "Name des Monitors",
+            "es": "Nombre del monitor"
+          }
+        },
+        {
+          "key": "category",
+          "type": "string",
+          "label": { "en": "Category", "fr": "Catégorie", "de": "Kategorie", "es": "Categoría" }
+        }
+      ]
+    },
+    {
+      "key": "monitor_up",
+      "label": {
+        "en": "A monitor is back online",
+        "fr": "Un moniteur est de retour en ligne",
+        "de": "Ein Monitor ist wieder online",
+        "es": "Un monitor vuelve a estar en línea"
+      },
+      "description": {
+        "en": "A monitor that was down is up or degraded again, with the length of the outage.",
+        "fr": "Un moniteur en panne est de nouveau en ligne ou dégradé, avec la durée de la panne.",
+        "de": "Ein ausgefallener Monitor ist wieder online oder beeinträchtigt, mit der Dauer des Ausfalls.",
+        "es": "Un monitor caído vuelve a estar en línea o degradado, con la duración de la caída."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "multi_select",
+          "source": "devices",
+          "label": {
+            "en": "Monitors (empty: any)",
+            "fr": "Moniteurs (vide : tous)",
+            "de": "Monitore (leer: alle)",
+            "es": "Monitores (vacío: todos)"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "monitor",
+          "type": "string",
+          "label": {
+            "en": "Monitor name",
+            "fr": "Nom du moniteur",
+            "de": "Name des Monitors",
+            "es": "Nombre del monitor"
+          }
+        },
+        {
+          "key": "category",
+          "type": "string",
+          "label": { "en": "Category", "fr": "Catégorie", "de": "Kategorie", "es": "Categoría" }
+        },
+        {
+          "key": "downtime_minutes",
+          "type": "number",
+          "label": {
+            "en": "Outage length (minutes)",
+            "fr": "Durée de la panne (minutes)",
+            "de": "Dauer des Ausfalls (Minuten)",
+            "es": "Duración de la caída (minutos)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "incident_opened",
+      "label": {
+        "en": "A new incident is opened",
+        "fr": "Un nouvel incident est ouvert",
+        "de": "Ein neuer Vorfall wird eröffnet",
+        "es": "Se abre un nuevo incidente"
+      },
+      "description": {
+        "en": "An incident in progress appears on the Kener status page, created by hand, by the API or by an alert.",
+        "fr": "Un incident en cours apparaît sur la page de statut Kener, créé à la main, par l'API ou par une alerte.",
+        "de": "Ein laufender Vorfall erscheint auf der Kener-Statusseite, von Hand, über die API oder durch einen Alarm erstellt.",
+        "es": "Aparece un incidente en curso en la página de estado de Kener, creado a mano, por la API o por una alerta."
+      },
+      "variables": [
+        {
+          "key": "title",
+          "type": "string",
+          "label": { "en": "Title", "fr": "Titre", "de": "Titel", "es": "Título" }
+        },
+        {
+          "key": "monitors",
+          "type": "string",
+          "label": {
+            "en": "Monitors affected",
+            "fr": "Moniteurs touchés",
+            "de": "Betroffene Monitore",
+            "es": "Monitores afectados"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Incident page",
+            "fr": "Page de l'incident",
+            "de": "Seite des Vorfalls",
+            "es": "Página del incidente"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "get_monitor_status",
+      "label": {
+        "en": "State of a monitor",
+        "fr": "État d'un moniteur",
+        "de": "Zustand eines Monitors",
+        "es": "Estado de un monitor"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Reads the state of a monitor for the next actions: online, degraded, response time, uptime, and a ready-made sentence.",
+        "fr": "Lit l'état d'un moniteur pour les actions suivantes : en ligne, dégradé, temps de réponse, disponibilité, et une phrase toute prête.",
+        "de": "Liest den Zustand eines Monitors für die nächsten Aktionen: online, beeinträchtigt, Antwortzeit, Verfügbarkeit und einen fertigen Satz.",
+        "es": "Lee el estado de un monitor para las siguientes acciones: en línea, degradado, tiempo de respuesta, disponibilidad y una frase lista."
+      },
+      "timeout_seconds": 30,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": { "en": "Monitor", "fr": "Moniteur", "de": "Monitor", "es": "Monitor" },
           "required": true
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
+          "key": "online",
           "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "label": { "en": "Online", "fr": "En ligne", "de": "Online", "es": "En línea" }
+        },
+        {
+          "key": "degraded",
+          "type": "boolean",
+          "label": { "en": "Degraded", "fr": "Dégradé", "de": "Beeinträchtigt", "es": "Degradado" }
+        },
+        {
+          "key": "state",
+          "type": "string",
+          "label": { "en": "State", "fr": "État", "de": "Zustand", "es": "Estado" }
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "label": {
+            "en": "Monitor name",
+            "fr": "Nom du moniteur",
+            "de": "Name des Monitors",
+            "es": "Nombre del monitor"
+          }
+        },
+        {
+          "key": "category",
+          "type": "string",
+          "label": { "en": "Category", "fr": "Catégorie", "de": "Kategorie", "es": "Categoría" }
+        },
+        {
+          "key": "response_time",
+          "type": "number",
+          "label": {
+            "en": "Response time (ms)",
+            "fr": "Temps de réponse (ms)",
+            "de": "Antwortzeit (ms)",
+            "es": "Tiempo de respuesta (ms)"
+          }
+        },
+        {
+          "key": "uptime_24h",
+          "type": "number",
+          "label": {
+            "en": "Uptime 24 h (%)",
+            "fr": "Disponibilité 24 h (%)",
+            "de": "Verfügbarkeit 24 h (%)",
+            "es": "Disponibilidad 24 h (%)"
+          }
+        },
+        {
+          "key": "sentence",
+          "type": "string",
+          "label": { "en": "Sentence", "fr": "Phrase", "de": "Satz", "es": "Frase" }
+        }
+      ]
+    },
+    {
+      "key": "get_status_summary",
+      "label": {
+        "en": "Status page summary",
+        "fr": "Résumé de la page de statut",
+        "de": "Zusammenfassung der Statusseite",
+        "es": "Resumen de la página de estado"
+      },
+      "description": {
+        "en": "Counts the monitors down and degraded, in Kener or one category, lists them with the incidents in progress, for a message.",
+        "fr": "Compte les moniteurs en panne et dégradés, dans Kener ou une catégorie, et les liste avec les incidents en cours, pour un message.",
+        "de": "Zählt die ausgefallenen und beeinträchtigten Monitore, in Kener oder einer Kategorie, und listet sie mit den laufenden Vorfällen auf.",
+        "es": "Cuenta los monitores caídos y degradados, en Kener o en una categoría, y los enumera con los incidentes en curso, para un mensaje."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "category",
+          "type": "string",
+          "label": {
+            "en": "Category (empty: all)",
+            "fr": "Catégorie (vide : toutes)",
+            "de": "Kategorie (leer: alle)",
+            "es": "Categoría (vacío: todas)"
+          },
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "key": "down",
+          "type": "number",
+          "label": {
+            "en": "Monitors down",
+            "fr": "Moniteurs en panne",
+            "de": "Ausgefallene Monitore",
+            "es": "Monitores caídos"
+          }
+        },
+        {
+          "key": "degraded",
+          "type": "number",
+          "label": {
+            "en": "Monitors degraded",
+            "fr": "Moniteurs dégradés",
+            "de": "Beeinträchtigte Monitore",
+            "es": "Monitores degradados"
+          }
+        },
+        {
+          "key": "total",
+          "type": "number",
+          "label": {
+            "en": "Monitors in total",
+            "fr": "Moniteurs au total",
+            "de": "Monitore insgesamt",
+            "es": "Monitores en total"
+          }
+        },
+        {
+          "key": "down_names",
+          "type": "string",
+          "label": {
+            "en": "Names of the monitors down",
+            "fr": "Noms des moniteurs en panne",
+            "de": "Namen der ausgefallenen Monitore",
+            "es": "Nombres de los monitores caídos"
+          }
+        },
+        {
+          "key": "incidents",
+          "type": "number",
+          "label": {
+            "en": "Incidents in progress",
+            "fr": "Incidents en cours",
+            "de": "Laufende Vorfälle",
+            "es": "Incidentes en curso"
+          }
+        },
+        {
+          "key": "incident_titles",
+          "type": "string",
+          "label": {
+            "en": "Titles of the incidents",
+            "fr": "Titres des incidents",
+            "de": "Titel der Vorfälle",
+            "es": "Títulos de los incidentes"
+          }
+        },
+        {
+          "key": "sentence",
+          "type": "string",
+          "label": { "en": "Sentence", "fr": "Phrase", "de": "Satz", "es": "Frase" }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
+      "key": "kener",
+      "label": { "en": "Kener", "fr": "Kener", "de": "Kener", "es": "Kener" },
       "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+        "en": "Incidents in progress and monitors down first, with response time and uptime.",
+        "fr": "Les incidents en cours et les moniteurs en panne d'abord, avec temps de réponse et disponibilité.",
+        "de": "Laufende Vorfälle und ausgefallene Monitore zuerst, mit Antwortzeit und Verfügbarkeit.",
+        "es": "Primero los incidentes en curso y los monitores caídos, con tiempo de respuesta y disponibilidad."
       },
       "icon": "activity",
-      "action_timeout_seconds": 15
+      "action_timeout_seconds": 30,
+      "settings": [
+        {
+          "key": "category",
+          "type": "string",
+          "label": {
+            "en": "Category (empty: all)",
+            "fr": "Catégorie (vide : toutes)",
+            "de": "Kategorie (leer: alle)",
+            "es": "Categoría (vacío: todas)"
+          },
+          "description": {
+            "en": "The name of a Kener category, as in Manage → Monitors.",
+            "fr": "Le nom d'une catégorie Kener, comme dans Manage → Monitors.",
+            "de": "Der Name einer Kener-Kategorie, wie unter Manage → Monitors.",
+            "es": "El nombre de una categoría de Kener, como en Manage → Monitors."
+          },
+          "required": false
+        },
+        {
+          "key": "monitors",
+          "type": "multi_select",
+          "source": "devices",
+          "label": {
+            "en": "Monitors (empty: the category)",
+            "fr": "Moniteurs (vide : la catégorie)",
+            "de": "Monitore (leer: die Kategorie)",
+            "es": "Monitores (vacío: la categoría)"
+          },
+          "description": {
+            "en": "Chosen monitors take precedence over the category. Only the devices added to Gladys can be chosen.",
+            "fr": "Les moniteurs choisis priment sur la catégorie. Seuls les appareils ajoutés à Gladys peuvent être choisis.",
+            "de": "Gewählte Monitore haben Vorrang vor der Kategorie. Nur die in Gladys angelegten Geräte sind wählbar.",
+            "es": "Los monitores elegidos prevalecen sobre la categoría. Solo se pueden elegir los dispositivos añadidos a Gladys."
+          },
+          "required": false
+        },
+        {
+          "key": "show_incidents",
+          "type": "boolean",
+          "label": {
+            "en": "Show the incidents in progress",
+            "fr": "Afficher les incidents en cours",
+            "de": "Laufende Vorfälle anzeigen",
+            "es": "Mostrar los incidentes en curso"
+          },
+          "required": false,
+          "default": true
+        },
+        {
+          "key": "show_refresh",
+          "type": "boolean",
+          "label": {
+            "en": "Show the Refresh button",
+            "fr": "Afficher le bouton Actualiser",
+            "de": "Schaltfläche „Aktualisieren“ anzeigen",
+            "es": "Mostrar el botón Actualizar"
+          },
+          "required": false,
+          "default": true
+        }
+      ]
     }
   ]
 }

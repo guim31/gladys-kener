@@ -30,6 +30,18 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration handles:
+
+- the **Kener API key**, stored by Gladys in the integration configuration
+  (never written to `/data`, never logged); it is only sent, in the
+  `Authorization` header, to the Kener address configured, and redirects are
+  not followed so it never reaches another host. A Kener API key can also
+  write; the integration only sends `GET` requests;
+- `/data/kener-state.json`: the last state of each monitor and since when, and
+  the id of the newest incident seen (no secret);
+- network: HTTP(S) requests to the Kener address, nothing else; no port is
+  opened.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
 and the third-party services and devices the integration talks to.

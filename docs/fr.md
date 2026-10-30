@@ -1,67 +1,155 @@
-# Template de démonstration
+# Kener
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+[Kener](https://kener.ing) est une page de statut auto-hébergée : elle teste
+vos services (sites, API, ports, DNS…) chaque minute et publie leur état et
+leurs incidents. Cette intégration l'amène dans Gladys : chaque moniteur
+devient un appareil avec son état, son temps de réponse et sa disponibilité,
+des scènes réagissent quand l'un tombe, revient, ou quand un incident est
+ouvert, et un widget du tableau de bord montre d'un coup d'œil les incidents
+et les moniteurs.
 
-## Ce que vous obtenez
+Gladys lit Kener : elle ne teste pas vos services elle-même.
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+Testée contre un vrai Kener dans Docker (Kener 4.1.10) : moniteurs en ligne,
+en panne et dégradés, un moniteur sans donnée, incidents ouverts et terminés,
+une mauvaise clé d'API. Vos retours sont les bienvenus dans
+[les issues](https://github.com/guim31/gladys-kener/issues).
 
-## Configuration
+## Ce qu'il faut
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+- Gladys Assistant 5.1.0 ou plus récent.
+- Kener **4** (l'API v4), joignable depuis Gladys : sur votre réseau (port
+  3000 par défaut) ou sur Internet. Kener 3 n'est pas pris en charge.
+- Une clé d'API Kener.
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+## Mise en route
 
-## Actions
+### 1. Créer une clé d'API dans Kener
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+Dans Kener, ouvrez **Manage → API Keys**, créez une clé (par exemple
+« Gladys ») et copiez-la : Kener ne l'affiche qu'une fois. Une clé d'API Kener
+permet aussi d'écrire (créer des incidents, des moniteurs) : cette intégration
+ne fait que lire, mais gardez la clé pour vous.
 
-## Scènes
+### 2. Configurer l'intégration
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+Dans Gladys, **Intégrations → Kener → Configuration** :
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+- **Adresse de Kener** : l'adresse de votre page de statut, par exemple
+  `http://192.168.1.2:3000` ou `https://status.example.com`. Une URL copiée
+  depuis le navigateur (`…/monitors/mon-api`) convient aussi. Si Kener tourne
+  sous un sous-chemin (`KENER_BASE_PATH`), incluez-le.
+- **Clé d'API** : la clé de l'étape 1.
+- **Intervalle de rafraîchissement** : 1, 2 ou 5 minutes. Kener écrit un point
+  par minute.
+- **Inclure les moniteurs masqués** : désactivé par défaut, les moniteurs
+  masqués sur la page de statut sont écartés.
+- **Langue des noms** : la langue des noms des fonctionnalités et des
+  résultats de scène.
+
+**Tester la connexion** lit Kener tout de suite et indique combien de
+moniteurs il a trouvés, combien sont en panne, et les incidents en cours.
+
+### 3. Ajouter les moniteurs
+
+Dans l'onglet **Découverte**, ajoutez les moniteurs à suivre, et l'appareil
+« Kener » pour l'instance entière. Les moniteurs en pause ne sont pas
+proposés. Un moniteur est identifié par son tag : le renommer dans Kener garde
+l'appareil, changer son tag en crée un nouveau.
+
+## Les appareils
+
+Chaque moniteur :
+
+| Fonctionnalité     | Valeur                                                  |
+| ------------------ | ------------------------------------------------------- |
+| En ligne           | Oui en ligne ou dégradé, Non en panne                   |
+| Dégradé            | Oui quand Kener l'affiche dégradé                       |
+| Temps de réponse   | Latence du dernier test qui n'était pas en panne, en ms |
+| Disponibilité 24 h | Sur les dernières 24 heures, avec la formule de Kener   |
+
+L'appareil « Kener » : **Moniteurs en panne**, **Moniteurs dégradés**,
+**Incidents en cours**.
+
+Le temps de réponse et la disponibilité sont envoyés au plus toutes les
+5 minutes (tout de suite quand l'état change), pour qu'une grande page de
+statut reste légère pour Gladys. Les appareils portent le badge cloud quand
+Kener est sur Internet, le badge local quand il est sur votre réseau.
 
 ## Tableau de bord
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+Le widget **Kener** montre quatre tuiles (moniteurs en panne, dégradés,
+incidents en cours, disponibilité moyenne), puis les incidents en cours avec
+leur état, puis les moniteurs, ceux en panne d'abord, avec temps de réponse et
+disponibilité. Au-delà de dix moniteurs, ils sont regroupés par catégorie
+Kener (« En panne : 1 / 7 »).
+
+Réglages : une **catégorie**, ou des **moniteurs** choisis (seuls les
+appareils ajoutés à Gladys) ; **Afficher les incidents en cours** ;
+**Afficher le bouton Actualiser**. Le bouton **Actualiser** relit Kener tout
+de suite. Avec une catégorie ou des moniteurs choisis, seuls leurs incidents
+sont comptés.
+
+## Scènes
+
+### Déclencheurs
+
+- **Un moniteur tombe en panne** : Kener enregistre un moniteur en panne. Il
+  confirme déjà un état avant de l'écrire (son « confirmation threshold »).
+  Filtre : les moniteurs (vide : tous, ajoutés à Gladys ou non). Variables :
+  nom du moniteur, catégorie.
+- **Un moniteur est de retour en ligne** : un moniteur en panne est de
+  nouveau en ligne ou dégradé. Variables : nom du moniteur, catégorie, durée
+  de la panne en minutes (depuis son premier point en panne).
+- **Un nouvel incident est ouvert** : un incident en cours apparaît sur la
+  page de statut, créé à la main, par l'API ou par une alerte Kener.
+  Variables : titre, moniteurs touchés, page de l'incident.
+
+Un changement survenu pendant que Gladys ou l'intégration était arrêtée est
+quand même annoncé, une fois, à la lecture suivante.
+
+### Actions
+
+- **État d'un moniteur** : en ligne, dégradé, état en toutes lettres, nom,
+  catégorie, temps de réponse, disponibilité 24 h, et une phrase comme
+  « NAS : En panne, 97,5 % sur 24 h. »
+- **Résumé de la page de statut** : moniteurs en panne, dégradés et au total,
+  noms des moniteurs en panne, incidents en cours et leurs titres, et une
+  phrase comme « En panne : NAS. Incidents en cours : Serveur de sauvegarde
+  injoignable. » Champ facultatif : une catégorie.
+
+Les deux relisent Kener quand la dernière lecture date de plus de
+15 secondes.
+
+### Idées de scènes
+
+- **Un moniteur tombe en panne** → envoyer un message avec le nom du
+  moniteur.
+- Chaque matin, **Résumé de la page de statut** → lire la phrase sur
+  l'enceinte seulement si un moniteur est en panne.
+- **Un nouvel incident est ouvert** → prévenir avec le titre et le lien de la
+  page.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **« Kener ne répond pas »** : vérifiez l'adresse et le port depuis la
+  machine de Gladys, et qu'un pare-feu ne bloque pas.
+- **« Clé d'API refusée »** : créez une nouvelle clé dans Manage → API Keys ;
+  une clé désactivée est refusée aussi.
+- **« Aucun Kener 4 à cette adresse »** : l'adresse n'est pas un Kener, ou un
+  Kener 3 (sans API v4). Vérifiez le sous-chemin si Kener en a un.
+- **« L'adresse redirige »** : saisissez directement l'adresse en `https://`.
+- **« Certificat refusé »** : un certificat auto-signé n'est pas accepté ;
+  utilisez l'adresse `http://` sur votre réseau.
+- **Un moniteur reste sans valeur** : Kener n'a encore aucun point pour lui.
+
+## Limites
+
+- Gladys lit Kener à l'intervalle choisi : une panne plus courte peut
+  échapper aux déclencheurs (la disponibilité la compte quand même).
+- La disponibilité est calculée sur les points des dernières 24 heures, avec
+  la formule du moniteur quand c'est une simple somme (celle par défaut
+  sinon). Les fenêtres de maintenance ne sont pas lues.
+- Les maintenances, les commentaires d'incidents et les pages ne sont pas lus.
+- L'intégration ne fait que lire : elle ne crée pas d'incident dans Kener.
+- Sans lien avec Kener ni son auteur.
