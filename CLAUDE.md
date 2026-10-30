@@ -249,8 +249,13 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   `url` publique (bâtie sur `ORIGIN`/l'URL du site). **En cours** comme la page de Kener
   (`getOngoingIncidents`) : commencé, non terminé (`end` nul ou futur), et pas `RESOLVED`. Un incident créé
   avec une fin passée reste `INVESTIGATING` : c'est la fin qui compte.
-- **Nouvel incident** : `id` plus grand que le dernier vu (gardé dans `/data`), et en cours. Première lecture ou
-  base Kener remise à zéro (id max plus petit) : aucun événement.
+- **Nouvel incident** : en cours et pas encore annoncé (ids annoncés gardés dans `/data`, limités à ceux que
+  Kener liste encore). Un incident programmé (début futur) est annoncé quand il commence — d'où cette liste et non
+  « id plus grand que le dernier vu » (relecture du 30/10). Première lecture : aucun événement.
+- **Premier regard** : seule la toute première lecture (rien en `/data`) fixe les états sans événement ; ensuite un
+  moniteur nouveau ou resté sans donnée qui apparaît en panne déclenche « tombe en panne ». Une pause pendant une
+  panne n'est pas comptée dans sa durée. Un appareil dont le moniteur a quitté la liste (pause, masqué, supprimé)
+  passe « injoignable ».
 - Badge des appareils : `local` si l'adresse est privée (RFC 1918, CGNAT/Tailscale, `.local`, nom sans point,
   ULA), `cloud` sinon — une page de statut est souvent publique (`transports` du manifeste : les deux).
 

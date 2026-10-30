@@ -152,4 +152,8 @@ Les deux relisent Kener quand la dernière lecture date de plus de
   sinon). Les fenêtres de maintenance ne sont pas lues.
 - Les maintenances, les commentaires d'incidents et les pages ne sont pas lus.
 - L'intégration ne fait que lire : elle ne crée pas d'incident dans Kener.
+- L'état d'un moniteur est son point le plus récent : si Kener cesse de
+  tester (Kener ou son Redis arrêté), le dernier état reste jusqu'à ce que ses
+  points aient plus de 24 heures. Un moniteur en pause, masqué ou supprimé dans
+  Kener rend son appareil injoignable.
 - Sans lien avec Kener ni son auteur.

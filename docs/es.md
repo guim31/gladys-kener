@@ -149,4 +149,8 @@ Ambas vuelven a leer Kener cuando la última lectura tiene más de 15 segundos.
   ventanas de mantenimiento no se leen.
 - Los mantenimientos, los comentarios de incidentes y las páginas no se leen.
 - La integración solo lee: no crea incidentes en Kener.
+- El estado de un monitor es su punto más reciente: si Kener deja de
+  comprobar (Kener o su Redis parado), el último estado se mantiene hasta que
+  sus puntos tengan más de 24 horas. Un monitor en pausa, oculto o eliminado en
+  Kener deja su dispositivo inaccesible.
 - Sin relación con Kener ni con su autor.

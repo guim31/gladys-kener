@@ -505,7 +505,7 @@ test('"Test the connection" reads Kener and reports in the four languages', asyn
   );
   world.kener.failure = 404;
   const refused = await world.fake.action('test_connection');
-  assert.match(refused.data.message.de, /kein Kener 4/);
+  assert.match(refused.data.message.de, /^Kein Kener 4/);
 });
 
 test('a normal reading cycle writes nothing at the info level', async (t) => {
@@ -538,4 +538,72 @@ test('the internal timer reads Kener and publishes the changes, without any poll
   }
   assert.ok(world.kener.requests.length > reads);
   assert.equal(world.fake.lastState(idsOf(world, 'NAS').feature('online')), 0);
+});
+
+test('an incident scheduled ahead is announced when it starts, once', async (t) => {
+  const clock = createClock();
+  const kener = new FakeKener({ now: clock.now });
+  const world = await createWorld({ clock, kener });
+  t.after(() => world.app.stop());
+  const start = Math.floor(clock.now() / 1000) + 120;
+  kener.incidents.push(incident(7, 'Planned outage', { start_date_time: start }));
+  await step(world);
+  assert.deepEqual(events(world, TRIGGERS.INCIDENT), [], 'not started yet');
+  await step(world);
+  await step(world);
+  await step(world);
+  assert.deepEqual(
+    events(world, TRIGGERS.INCIDENT).map((e) => e.data.title),
+    ['Planned outage'],
+  );
+});
+
+test('after the first read, a new monitor that appears down is announced', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  world.kener.monitors.push(monitor('Printer', 'printer'));
+  world.kener.fill('printer', 'DOWN', 2);
+  await step(world, { Printer: 'DOWN' });
+  assert.deepEqual(
+    events(world, TRIGGERS.DOWN).map((e) => e.data.monitor),
+    ['Printer'],
+  );
+});
+
+test('a monitor paused while down: the pause is not counted in the outage', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  await step(world, { NAS: 'DOWN' });
+  const nas = world.kener.get('NAS');
+  nas.status = 'INACTIVE';
+  await step(world);
+  world.clock.advance(120 * MINUTE);
+  await world.hub.pollNow();
+  nas.status = 'ACTIVE';
+  await step(world, { NAS: 'UP' });
+  const up = events(world, TRIGGERS.UP);
+  assert.equal(up.length, 1);
+  assert.ok(up[0].data.downtime_minutes < 10, `${up[0].data.downtime_minutes} min`);
+});
+
+test('an added monitor removed from Kener gets the unreachable badge', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  await createDevices(world);
+  world.kener.get('API').status = 'INACTIVE';
+  await step(world);
+  const last = world.fake.transports.filter(
+    (e) => e.device_external_id === idsOf(world, 'API').device,
+  );
+  assert.equal(last.at(-1).transport, 'unreachable');
+});
+
+test('a scene action reads again at once after a failed read', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  world.kener.failure = 'down';
+  await world.hub.pollNow();
+  world.kener.failure = null;
+  const ack = await world.fake.sceneAction('get_status_summary', {});
+  assert.equal(ack.success, true, ack.error);
 });

@@ -69,6 +69,12 @@ const MAX_TRANSPORTS_PER_REQUEST = 100;
 const DATA_CONCURRENCY = 4;
 const MINUTE = 60_000;
 
+/** A text of every language, its first letter in upper case (status line). */
+const capitalized = (text) =>
+  Object.fromEntries(
+    Object.entries(text).map(([lang, value]) => [lang, value[0].toUpperCase() + value.slice(1)]),
+  );
+
 const STATE_OF = { UP: 'up', DEGRADED: 'degraded', DOWN: 'down' };
 
 /** The state of a monitor from its points (oldest first). */
@@ -150,7 +156,7 @@ export class KenerHub {
     this.transports = new Map();
     this.connection = null;
     this.discovered = null;
-    this.saved = { monitors: {}, lastIncidentId: null };
+    this.saved = { monitors: {}, announced: null };
     this.pollTimer = null;
     this.stopped = false;
     // What fails again at every cycle (Gladys refusing, the reading loop):
@@ -164,7 +170,10 @@ export class KenerHub {
     const saved = await this.store.load();
     this.saved = {
       monitors: saved.monitors && typeof saved.monitors === 'object' ? saved.monitors : {},
-      lastIncidentId: Number.isInteger(saved.lastIncidentId) ? saved.lastIncidentId : null,
+      // Ids of the incidents already announced; null before the first read.
+      announced: Array.isArray(saved.announced)
+        ? saved.announced.filter((id) => Number.isInteger(id))
+        : null,
     };
     await this.reconfigure(config);
   }
@@ -189,7 +198,7 @@ export class KenerHub {
     if (signature !== this.signature) {
       if (this.signature !== null && JSON.parse(this.signature)[0] !== config.url) {
         // Another Kener: the states saved for the previous one mean nothing.
-        this.saved = { monitors: {}, lastIncidentId: null };
+        this.saved = { monitors: {}, announced: null };
         this.store.save(this.saved);
       }
       this.signature = signature;
@@ -253,7 +262,8 @@ export class KenerHub {
 
   /** Read again when the last read is older than `freshMs` (scene actions). */
   async refreshIfStale() {
-    if (this.client && this.now() - this.readAt >= this.timings.freshMs) {
+    // A failed read is retried at once: Kener may be back.
+    if (this.client && (this.error || this.now() - this.readAt >= this.timings.freshMs)) {
       await this.pollNow();
     }
   }
@@ -369,6 +379,9 @@ export class KenerHub {
     const stateChanged = new Set();
     const events = [];
     let dirty = false;
+    // After the very first read, a monitor seen for the first time (new in
+    // Kener, or without data until now) that is down is announced.
+    const seeded = this.saved.announced !== null || Object.keys(this.saved.monitors).length > 0;
     for (const raw of monitors) {
       if (next.has(raw.id)) {
         continue;
@@ -392,7 +405,7 @@ export class KenerHub {
       if (previous && previous.state !== monitor.state) {
         stateChanged.add(raw.id);
       }
-      dirty = this.transition(monitor, monitorPoints, events) || dirty;
+      dirty = this.transition(monitor, monitorPoints, events, seeded) || dirty;
     }
     if ([...this.monitors.keys()].some((id) => !next.has(id))) {
       widgetChanged = true; // a monitor removed, paused or hidden in Kener
@@ -435,26 +448,33 @@ export class KenerHub {
   }
 
   /**
-   * Keep the incidents in progress; find the ones opened since the last read.
+   * Keep the incidents in progress; find the ones not announced yet. An
+   * incident scheduled ahead (a start in the future) is announced when it
+   * starts.
    * @returns {{ changed: boolean, opened: object[]|null }} opened: null when
-   *   the newest id saved did not move
+   *   nothing new was announced
    */
   applyIncidents(incidents, now) {
     const ongoing = incidents.filter((incident) => isOngoing(incident, now));
     const signature = (list) => JSON.stringify(list.map((i) => [i.id, i.title, i.state]));
     const changed = signature(ongoing) !== signature(this.incidents);
     this.incidents = ongoing;
-    const newest = incidents.reduce((max, incident) => Math.max(max, incident.id), 0);
-    const last = this.saved.lastIncidentId;
-    if (last === newest) {
+    const first = this.saved.announced === null;
+    const announced = new Set(this.saved.announced ?? []);
+    const opened = ongoing
+      .filter((incident) => !announced.has(incident.id))
+      .sort((a, b) => a.id - b.id);
+    // Only the ids Kener still lists are kept (the 1000 newest).
+    const listed = new Set(incidents.map((incident) => incident.id));
+    const kept = [...announced].filter((id) => listed.has(id));
+    if (opened.length === 0 && !first && kept.length === announced.size) {
       return { changed, opened: null };
     }
-    this.saved.lastIncidentId = newest;
-    // First read ever, or a Kener database started again: no event.
-    if (last === null || newest < last) {
+    this.saved.announced = [...kept, ...opened.map((incident) => incident.id)];
+    // First read ever: what is open is known, not new.
+    if (first) {
       return { changed, opened: [] };
     }
-    const opened = ongoing.filter((incident) => incident.id > last).sort((a, b) => a.id - b.id);
     for (const incident of opened) {
       logger.info(`New incident: ${incident.title}`);
     }
@@ -475,11 +495,15 @@ export class KenerHub {
    * Compare a monitor with its last saved state; queue the scene events.
    * @returns {boolean} whether the saved state changed
    */
-  transition(monitor, points, events) {
+  transition(monitor, points, events, seeded = true) {
     const previous = this.saved.monitors[monitor.id];
     const { state } = monitor;
     let dirty = false;
     if (previous?.missingSince !== undefined) {
+      // Paused (or out of the list) during an outage: the pause is not downtime.
+      if (previous.state === 'down') {
+        previous.since += Math.max(0, this.now() - previous.missingSince);
+      }
       delete previous.missingSince;
       dirty = true;
     }
@@ -494,13 +518,13 @@ export class KenerHub {
       // Up and degraded are both online: an outage is measured from its start.
       since: state !== 'down' && previous && previous.state !== 'down' ? previous.since : since,
     };
-    if (!previous) {
+    if (!previous && (!seeded || state !== 'down')) {
       return true; // first sight: no event
     }
     if (state === 'down') {
       logger.info(`${monitor.name} is down`);
       events.push([TRIGGERS.DOWN, monitor, {}]);
-    } else if (previous.state === 'down') {
+    } else if (previous?.state === 'down') {
       const minutes = Math.max(0, Math.round((now - previous.since) / MINUTE));
       logger.info(`${monitor.name} is back online after ${minutes} min`);
       events.push([TRIGGERS.UP, monitor, { downtime_minutes: minutes }]);
@@ -704,6 +728,16 @@ export class KenerHub {
         entries.push({ external_id: externalId, transport });
       }
     }
+    // An added monitor paused, hidden or deleted in Kener: no more values.
+    if (!this.error) {
+      for (const device of this.gladys.devices ?? []) {
+        const id = parseMonitorId(this.gladys, device.external_id);
+        const gone = DEVICE_TRANSPORTS.UNREACHABLE;
+        if (id && !this.monitors.has(id) && this.transports.get(device.external_id) !== gone) {
+          entries.push({ external_id: device.external_id, transport: gone });
+        }
+      }
+    }
     for (let at = 0; at < entries.length; at += MAX_TRANSPORTS_PER_REQUEST) {
       const batch = entries.slice(at, at + MAX_TRANSPORTS_PER_REQUEST);
       try {
@@ -730,7 +764,7 @@ export class KenerHub {
       return { connected: false, message: CONNECTION_TEXT.noKey };
     }
     if (this.error) {
-      return { connected: false, message: ERROR_TEXT[this.error.kind] };
+      return { connected: false, message: capitalized(ERROR_TEXT[this.error.kind]) };
     }
     return { connected: true };
   }

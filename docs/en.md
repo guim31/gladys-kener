@@ -142,4 +142,8 @@ Both read Kener again when the last reading is older than 15 seconds.
   Maintenance windows are not read.
 - Maintenances, comments of incidents and pages are not read.
 - The integration only reads: it does not create incidents in Kener.
+- The state of a monitor is its newest data point: if Kener stops checking
+  (Kener or its Redis down), the last state stays until its points are older
+  than 24 hours. A monitor paused, hidden or deleted in Kener shows its device
+  unreachable.
 - Not affiliated with Kener or its author.

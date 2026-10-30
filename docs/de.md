@@ -150,4 +150,8 @@ Beide lesen Kener neu, wenn das letzte Lesen älter als 15 Sekunden ist.
   (sonst mit der Standardformel). Wartungsfenster werden nicht gelesen.
 - Wartungen, Kommentare zu Vorfällen und Seiten werden nicht gelesen.
 - Die Integration liest nur: sie legt keine Vorfälle in Kener an.
+- Der Zustand eines Monitors ist sein neuester Datenpunkt: Hört Kener auf zu
+  prüfen (Kener oder sein Redis gestoppt), bleibt der letzte Zustand, bis seine
+  Punkte älter als 24 Stunden sind. Ein in Kener pausierter, ausgeblendeter
+  oder gelöschter Monitor macht sein Gerät unerreichbar.
 - Nicht mit Kener oder seinem Autor verbunden.
