@@ -1,0 +1,109 @@
+{
+  "data": [
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793380920,
+      "status": "DOWN",
+      "latency": 5910,
+      "type": "TIMEOUT"
+    },
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793380980,
+      "status": "UP",
+      "latency": 369,
+      "type": "REALTIME"
+    },
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793381040,
+      "status": "DEGRADED",
+      "latency": 106,
+      "type": "INCIDENT"
+    },
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793381100,
+      "status": "DEGRADED",
+      "latency": 123,
+      "type": "INCIDENT"
+    },
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793381160,
+      "status": "DEGRADED",
+      "latency": 111,
+      "type": "INCIDENT"
+    },
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793381220,
+      "status": "DEGRADED",
+      "latency": 53,
+      "type": "INCIDENT"
+    },
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793381280,
+      "status": "DEGRADED",
+      "latency": 122,
+      "type": "INCIDENT"
+    },
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793381340,
+      "status": "DEGRADED",
+      "latency": 122,
+      "type": "INCIDENT"
+    },
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793381400,
+      "status": "DEGRADED",
+      "latency": 125,
+      "type": "INCIDENT"
+    },
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793381460,
+      "status": "DEGRADED",
+      "latency": 94,
+      "type": "INCIDENT"
+    },
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793381520,
+      "status": "DEGRADED",
+      "latency": 73,
+      "type": "INCIDENT"
+    },
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793381580,
+      "status": "DEGRADED",
+      "latency": 115,
+      "type": "INCIDENT"
+    },
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793381640,
+      "status": "DEGRADED",
+      "latency": 83,
+      "type": "INCIDENT"
+    },
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793381700,
+      "status": "DEGRADED",
+      "latency": 77,
+      "type": "INCIDENT"
+    },
+    {
+      "monitor_tag": "web-up",
+      "timestamp": 1793381760,
+      "status": "DEGRADED",
+      "latency": 607,
+      "type": "INCIDENT"
+    }
+  ]
+}

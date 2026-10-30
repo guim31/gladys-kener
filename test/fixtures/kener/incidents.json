@@ -1,0 +1,28 @@
+{
+  "incidents": [
+    {
+      "id": 2,
+      "title": "NAS unreachable",
+      "start_date_time": 1793380680,
+      "end_date_time": null,
+      "state": "INVESTIGATING",
+      "incident_source": "API",
+      "monitors": [{ "monitor_tag": "nas-down", "impact": "DOWN" }],
+      "created_at": "2026-10-30T17:23:04.000Z",
+      "updated_at": "2026-10-30T17:23:04.000Z",
+      "url": "http://localhost:3000/incidents/2"
+    },
+    {
+      "id": 1,
+      "title": "Old outage",
+      "start_date_time": 1793373780,
+      "end_date_time": 1793377380,
+      "state": "INVESTIGATING",
+      "incident_source": "API",
+      "monitors": [{ "monitor_tag": "web-up", "impact": "DEGRADED" }],
+      "created_at": "2026-10-30T17:23:04.000Z",
+      "updated_at": "2026-10-30T17:23:04.000Z",
+      "url": "http://localhost:3000/incidents/1"
+    }
+  ]
+}

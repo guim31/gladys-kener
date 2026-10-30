@@ -31,16 +31,20 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+index.js                          SDK wiring only: src/app.js registers the handlers before connect()
+src/app.js                        every SDK handler -> the hub (also used by the tests)
+src/hub.js                        reading timer, points of 24 h, states, transitions and incidents -> scene events, views
+src/devices.js                    one device per monitor + the instance device: features, names, values
+src/kener/client.js               Kener API v4 (fetch), errors by kind, platform ids, normalization
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
-src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/widgets.js                    dashboard widget `kener` (manifest `widgets`)
+src/texts.js                      connection, error, state, report and sentence texts (4 languages)
+src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization, local/cloud address
+src/store.js, src/problems.js     /data/kener-state.json; one log line per repeated failure
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en and fr mandatory)
 test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+                                  and helpers/fakeKener.js (checked against test/fixtures/kener)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +74,10 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, widget content, feature names, scene outputs, manifest texts, and
+  `docs/en.md`, `docs/fr.md`, `docs/de.md`, `docs/es.md`, kept in sync
+  (`test/i18n.test.js` checks the languages and the doc sections).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -214,6 +220,44 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - Les filtres de scène ne font qu'égalité et appartenance : un seuil reste le travail d'un capteur.
 - **Les clés de widgets, de déclencheurs et d'actions sont figées une fois publiées.**
 - `gladys_version` `>=5.1.0` dès qu'il y a widgets, déclencheurs ou actions de scène.
+
+## Kener (propre à ce dépôt)
+
+- **Version** : Kener **4** (image `rajnandan1/kener` du 26/10/2026, 4.1.10). Le brief parlait de « Kener 3.x » :
+  la v3 n'a pas l'API v4, elle répond 404 et l'intégration le dit (« aucun Kener 4 »). Kener 4 demande Redis
+  (`REDIS_URL`) et `KENER_SECRET_KEY` ; SQLite par défaut dans `/app/database`.
+- **API v4**, toutes les routes sous `/api/v4` exigent `Authorization: Bearer <clé>` (401 JSON
+  `UNAUTHORIZED` sinon, même pour une route inconnue) ; une route `/api/…` inconnue avec une bonne clé rend 404
+  JSON. Clé créée dans **Manage → API Keys** (affichée une fois, stockée en HMAC-SHA256 de `KENER_SECRET_KEY`).
+  Une clé peut **tout écrire** : l'intégration n'envoie que des `GET`. Pour un test local sans interface, la
+  ligne `api_keys` s'insère en SQLite avec ce HMAC.
+- `GET /api/v4/monitors` : `tag` (`[a-z0-9_-]` imposé par la v4), `name`, `category_name`, `status`
+  (`ACTIVE`/`INACTIVE` : en pause, **pas l'état du service**), `is_hidden` (`YES`/`NO`),
+  `monitor_settings_json.uptime_formula_numerator/denominator` (somme de `up`, `down`, `degraded`,
+  `maintenance`). Les secrets de `type_data` reviennent masqués (`********`) : jamais lus.
+  **Formule** : les moniteurs semés par Kener comptent « dégradé » comme panne (`up + maintenance`), les
+  nouveaux comme disponible (défaut `up + maintenance + degraded`). On applique celle du moniteur quand c'est
+  une simple somme, le défaut sinon ; maintenance vaut 0 (absente des points).
+- `GET /api/v4/monitors/{tag}/data?start_ts=&end_ts=` (**obligatoires**, secondes, alignées sur la minute,
+  intervalle `[start, end)`) : un point par test, `status` `UP`/`DOWN`/`DEGRADED`, `latency` en ms, `type`
+  (`REALTIME`, `TIMEOUT`, `DEFAULT` pour un moniteur sans test). L'état courant = **le dernier point** (Kener
+  applique déjà son `confirmation_threshold` avant d'écrire). Première lecture : 24 h ; ensuite seulement les
+  5 dernières minutes, fusionnées en mémoire (Kener peut réécrire une minute). Un moniteur API lent sort
+  **DEGRADED** avec l'`eval` par défaut (vu en vrai sur la page d'accueil de Kener elle-même).
+- `GET /api/v4/incidents` : les 1000 plus récents par `id` décroissant, `start_date_time`/`end_date_time`
+  en secondes (`null` tant qu'ouvert), `state` (`INVESTIGATING`…`RESOLVED`), `monitors[{monitor_tag, impact}]`,
+  `url` publique (bâtie sur `ORIGIN`/l'URL du site). **En cours** comme la page de Kener
+  (`getOngoingIncidents`) : commencé, non terminé (`end` nul ou futur), et pas `RESOLVED`. Un incident créé
+  avec une fin passée reste `INVESTIGATING` : c'est la fin qui compte.
+- **Nouvel incident** : en cours et pas encore annoncé (ids annoncés gardés dans `/data`, limités à ceux que
+  Kener liste encore). Un incident programmé (début futur) est annoncé quand il commence — d'où cette liste et non
+  « id plus grand que le dernier vu » (relecture du 30/10). Première lecture : aucun événement.
+- **Premier regard** : seule la toute première lecture (rien en `/data`) fixe les états sans événement ; ensuite un
+  moniteur nouveau ou resté sans donnée qui apparaît en panne déclenche « tombe en panne ». Une pause pendant une
+  panne n'est pas comptée dans sa durée. Un appareil dont le moniteur a quitté la liste (pause, masqué, supprimé)
+  passe « injoignable ».
+- Badge des appareils : `local` si l'adresse est privée (RFC 1918, CGNAT/Tailscale, `.local`, nom sans point,
+  ULA), `cloud` sinon — une page de statut est souvent publique (`transports` du manifeste : les deux).
 
 ## Store
 

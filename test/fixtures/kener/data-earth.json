@@ -1,0 +1,116 @@
+{
+  "data": [
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793380860,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793380920,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793380980,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793381040,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793381100,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793381160,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793381220,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793381280,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793381340,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793381400,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793381460,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793381520,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793381580,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793381640,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793381700,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    },
+    {
+      "monitor_tag": "earth",
+      "timestamp": 1793381760,
+      "status": "UP",
+      "latency": 0,
+      "type": "DEFAULT"
+    }
+  ]
+}
