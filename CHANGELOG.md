@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-30
+
 ### Added
 
 - One device per Kener monitor: online, degraded, response time, uptime over
@@ -25,3 +27,6 @@ the notes of the version's GitHub Release.
 - Kener 4 API key, refresh interval from 1 to 5 minutes, hidden monitors on
   demand, local or cloud badge by the address, "Test the connection" action.
 - Texts and documentation in English, French, German and Spanish.
+
+[Unreleased]: https://github.com/guim31/gladys-kener/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-kener/releases/tag/v1.0.0
